@@ -2,14 +2,21 @@ package com.example.springoot_using_jwt.util;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import com.example.springoot_using_jwt.jwtauth.config.JwtConfig;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
@@ -46,7 +53,16 @@ public class JwtUtil {
     }
 
     public String generateToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+
+        // Add roles as a claim
+        Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
+        claims.put("roles", authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+
         return Jwts.builder()
+                .setClaims(claims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + jwtConfig.getExpiration()))
@@ -66,4 +82,15 @@ public class JwtUtil {
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
+
+    public List<String> extractRoles(String token) {
+        Claims claims = extractAllClaims(token);
+
+        // Use @SuppressWarnings to suppress unchecked cast warning
+        @SuppressWarnings("unchecked")
+        List<String> roles = (List<String>) claims.get("roles", List.class);
+
+        return roles;
+    }
+
 }

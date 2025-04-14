@@ -7,11 +7,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/user")
-public class ProtectedController {
-
+@RequestMapping("/admin")
+public class AdminController {
     @GetMapping("/protected")
     public ResponseEntity<String> getProtectedData(Authentication auth) {
-        return ResponseEntity.ok("Hello, " + auth.getName() + "! You accessed protected data.");
+        return ResponseEntity.ok("Hello, admin  " + auth.getName() + "! You accessed protected data.");
     }
 }

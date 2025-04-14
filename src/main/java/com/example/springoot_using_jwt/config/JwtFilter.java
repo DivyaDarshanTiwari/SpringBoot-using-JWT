@@ -11,12 +11,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -57,12 +61,20 @@ public class JwtFilter extends OncePerRequestFilter {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 // Validate the token
+                // Validate the token
                 if (jwtUtil.validateToken(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails,
-                            null, userDetails.getAuthorities());
+                    List<String> roles = jwtUtil.extractRoles(jwt);
+                    List<GrantedAuthority> authorities = roles.stream()
+                            .map(role -> (GrantedAuthority) new SimpleGrantedAuthority(role)) // Explicit casting
+                            .collect(Collectors.toList());
 
-                    // Set authentication in the context
+                    // Set the user authentication in the context
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, authorities); // Use authorities here
+
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    logger.warn("Invalid JWT token for user: " + username);
                 }
             } catch (Exception e) {
                 logger.error("Failed to authenticate user: " + username, e);

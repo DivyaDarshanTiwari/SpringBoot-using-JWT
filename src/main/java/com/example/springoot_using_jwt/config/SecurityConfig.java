@@ -27,11 +27,13 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // Allow auth endpoints
-                        .anyRequest().authenticated()) // Require authentication for all other requests
+                        .requestMatchers("/auth/**").permitAll() // Public routes
+                        .requestMatchers("/admin/**").hasRole("ADMIN") // Only for ADMIN
+                        .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN") // Accessible to USER or
+                                                                                 // ADMIN
+                        .anyRequest().authenticated()) // Others require login
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // Add JwtFilter before the
-                                                                                        // authentication filter
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
